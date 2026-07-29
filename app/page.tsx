@@ -27,6 +27,7 @@ export default function Home(){
   const [tab,setTab]=useState<'home'|'dex'>('home');
   const [message,setMessage]=useState('たまごをさわってみる。');
   const [user,setUser]=useState<User|null>(null);
+  const [accountOpen,setAccountOpen]=useState(false);
   const [ready,setReady]=useState(false);
   const current=useMemo(()=>creatures.find(c=>c.id===game.currentId)||null,[game.currentId]);
 
@@ -63,7 +64,7 @@ export default function Home(){
     if(!s){setMessage('VercelにSupabase環境変数を設定するとGoogleログインが使えます。');return;}
     await s.auth.signInWithOAuth({provider:'google',options:{redirectTo:window.location.origin}});
   }
-  async function logout(){const s=getSupabase();if(s)await s.auth.signOut();setUser(null)}
+  async function logout(){const s=getSupabase();if(s)await s.auth.signOut();setUser(null);setAccountOpen(false)}
 
   function tap(){
     setGame(prev=>{
@@ -88,9 +89,22 @@ export default function Home(){
     });
   }
 
+  const displayName=user?.user_metadata?.full_name||user?.user_metadata?.name||user?.email?.split('@')[0]||'ユーザー';
+  const avatarUrl=user?.user_metadata?.avatar_url||user?.user_metadata?.picture||'';
   const crack=game.phase==='egg'?Math.min(4,Math.floor(game.taps/Math.max(1,game.hatchAt/5))):0;
   return <main>
-    <header><div><h1>Touch Egg</h1><p>触るだけ。いつか生まれる。</p></div><button className="login" onClick={user?logout:login}>{user?'ログアウト':'Googleでログイン'}</button></header>
+    <header><div><h1>Touch Egg</h1><p>触るだけ。いつか生まれる。</p></div>
+      {user?<div className="accountWrap">
+        <button className="accountButton" onClick={()=>setAccountOpen(v=>!v)} aria-expanded={accountOpen}>
+          {avatarUrl?<img src={avatarUrl} alt=""/>:<span className="avatarFallback">{displayName.slice(0,1)}</span>}
+          <span className="accountName">{displayName}</span><span className="chev">⌄</span>
+        </button>
+        {accountOpen&&<div className="accountMenu">
+          <div className="accountIdentity">{avatarUrl?<img src={avatarUrl} alt=""/>:<span className="avatarFallback large">{displayName.slice(0,1)}</span>}<div><strong>{displayName}</strong><small>{user.email}</small></div></div>
+          <button onClick={logout}>ログアウト</button>
+        </div>}
+      </div>:<button className="login" onClick={login}>Googleでログイン</button>}
+    </header>
     <nav><button className={tab==='home'?'active':''} onClick={()=>setTab('home')}>たまご</button><button className={tab==='dex'?'active':''} onClick={()=>setTab('dex')}>図鑑 <span>{game.discovered.length}/{creatures.length}</span></button></nav>
     {tab==='home'?<section className="play">
       <div className="status">GEN {game.generation} ・ {game.phase==='egg'?'？？？':game.phase.toUpperCase()}</div>
@@ -101,7 +115,7 @@ export default function Home(){
       {current&&<div className="card"><div className="cardTop"><strong>{current.name}</strong><span className={`rarity ${current.rarity.toLowerCase()}`}>{rarityLabel[current.rarity]}</span></div><p>{current.trivia}</p><small>{current.region} ・ {current.category} ・ {game.trait}</small></div>}
       <p className="hint">{game.phase==='egg'?`タッチ ${game.taps}回`:`成長 ${game.growth} ・ さわって育てる`}</p>
     </section>:<Dex discovered={game.discovered}/>} 
-    <footer>{user?`同期中：${user.email}`:'ログインすると図鑑と世代をクラウド保存できます'}</footer>
+    <footer>{user?`${displayName}としてクラウド保存中`:'ログインすると図鑑と世代をクラウド保存できます'}</footer>
   </main>;
 }
 
