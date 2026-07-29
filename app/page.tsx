@@ -12,8 +12,13 @@ type GameState = { phase:Phase; taps:number; hatchAt:number; growth:number; gene
 const STORAGE='touch-egg-save-v2';
 const traits=['おっとり','せっかち','食いしん坊','夜ふかし','人見知り','好奇心旺盛','よく寝る','気まぐれ'];
 const reactions=['……。','少し揺れた？','気のせいかもしれない。','中から音がした。','ほんのり温かい。','いま、こっちを見た？'];
-function randomHatch(){return 70+Math.floor(Math.random()*71)}
-const initial:GameState={phase:'egg',taps:0,hatchAt:100,growth:0,generation:1,currentId:null,discovered:[],history:[],pity:0,trait:''};
+function randomHatch(){return 35+Math.floor(Math.random()*36)}
+const initial:GameState={phase:'egg',taps:0,hatchAt:50,growth:0,generation:1,currentId:null,discovered:[],history:[],pity:0,trait:''};
+
+function migrateGame(state:GameState):GameState{
+  if(state.phase==='egg'&&state.hatchAt>70)return {...state,hatchAt:Math.max(35,Math.ceil(state.hatchAt/2))};
+  return state;
+}
 
 function pickCreature(state:GameState){
   const unseen=creatures.filter(c=>!state.discovered.includes(c.id));
@@ -33,7 +38,7 @@ export default function Home(){
 
   useEffect(()=>{
     const raw=localStorage.getItem(STORAGE);
-    if(raw){try{setGame(JSON.parse(raw))}catch{}}
+    if(raw){try{setGame(migrateGame(JSON.parse(raw)))}catch{}}
     else setGame(v=>({...v,hatchAt:randomHatch()}));
     const s=getSupabase();
     if(!s){setReady(true);return;}
@@ -41,7 +46,7 @@ export default function Home(){
       setUser(data.user||null);
       if(data.user){
         const {data:row}=await s.from('game_saves').select('state').eq('user_id',data.user.id).maybeSingle();
-        if(row?.state)setGame(row.state as GameState);
+        if(row?.state)setGame(migrateGame(row.state as GameState));
       }
       setReady(true);
     });
@@ -77,7 +82,7 @@ export default function Home(){
           setMessage(`${born.name}が生まれた！ ${born.trivia}`);
           return {...prev,phase:'baby',taps,growth:0,currentId:born.id,trait,discovered,history:[...prev.history,{creatureId:born.id,bornAt:new Date().toISOString(),generation:prev.generation,trait}],pity:born.rarity==='COMMON'?prev.pity+1:0};
         }
-        if(taps%20===0||Math.random()<.08)setMessage(reactions[Math.floor(Math.random()*reactions.length)]);
+        if(taps%10===0||Math.random()<.1)setMessage(reactions[Math.floor(Math.random()*reactions.length)]);
         return {...prev,taps};
       }
       const growth=prev.growth+1;
@@ -91,7 +96,9 @@ export default function Home(){
 
   const displayName=user?.user_metadata?.full_name||user?.user_metadata?.name||user?.email?.split('@')[0]||'ユーザー';
   const avatarUrl=user?.user_metadata?.avatar_url||user?.user_metadata?.picture||'';
-  const crack=game.phase==='egg'?Math.min(4,Math.floor(game.taps/Math.max(1,game.hatchAt/5))):0;
+  const crack=game.phase==='egg'?Math.min(4,Math.floor((game.taps/Math.max(1,game.hatchAt))*5)):0;
+  const progress=game.phase==='egg'?Math.min(100,Math.round(game.taps/game.hatchAt*100)):0;
+  const remaining=game.phase==='egg'?Math.max(0,game.hatchAt-game.taps):0;
   return <main>
     <header><div><h1>Touch Egg</h1><p>触るだけ。いつか生まれる。</p></div>
       {user?<div className="accountWrap">
@@ -109,9 +116,10 @@ export default function Home(){
     {tab==='home'?<section className="play">
       <div className="status">GEN {game.generation} ・ {game.phase==='egg'?'？？？':game.phase.toUpperCase()}</div>
       <button className="touchTarget" onClick={tap} aria-label="さわる">
-        {game.phase==='egg'?<div className={`egg crack${crack}`}><i/><b/><em/></div>:current&&<CreatureFace creature={current} phase={game.phase}/>} 
+        {game.phase==='egg'?<EggArt stage={crack}/>:current&&<CreatureFace creature={current} phase={game.phase}/>} 
       </button>
       <div className="message">{message}</div>
+      {game.phase==='egg'&&<div className="eggProgress"><div className="progressTrack"><i style={{width:`${progress}%`}}/></div><strong>{game.taps} / {game.hatchAt} 回</strong><small>{remaining>0?`あと ${remaining} 回くらいで何か起きそう`:'もうすぐ…！'}</small></div>}
       {current&&<div className="card"><div className="cardTop"><strong>{current.name}</strong><span className={`rarity ${current.rarity.toLowerCase()}`}>{rarityLabel[current.rarity]}</span></div><p>{current.trivia}</p><small>{current.region} ・ {current.category} ・ {game.trait}</small></div>}
       <p className="hint">{game.phase==='egg'?`タッチ ${game.taps}回`:`成長 ${game.growth} ・ さわって育てる`}</p>
     </section>:<Dex discovered={game.discovered}/>} 
@@ -119,5 +127,7 @@ export default function Home(){
   </main>;
 }
 
-function CreatureFace({creature,phase}:{creature:Creature;phase:Phase}){return <div className={`creature ${phase}`}><div className="creatureEmoji">{creature.emoji}</div><div className="eyes"><i/><i/></div><span>{creature.name}</span></div>}
-function Dex({discovered}:{discovered:string[]}){return <section className="dex"><div className="dexIntro"><h2>CREATURE BOOK</h2><p>世界の神話・伝説・古生物。出会ったものだけ記録される。</p></div><div className="grid">{creatures.map((c,i)=>{const seen=discovered.includes(c.id);return <article className={seen?'seen':'locked'} key={c.id}><div className="no">No.{String(i+1).padStart(3,'0')}</div><div className="dexEmoji">{seen?c.emoji:'?'}</div><h3>{seen?c.name:'？？？？'}</h3>{seen?<><div className={`rarity ${c.rarity.toLowerCase()}`}>{c.rarity}</div><p>{c.trivia}</p><small>{c.region} ・ {c.category}</small><a href={c.sourceUrl} target="_blank" rel="noreferrer">根拠：{c.sourceLabel} ↗</a></>:<p>まだ出会っていない。</p>}</article>})}</div></section>}
+function EggArt({stage}:{stage:number}){return <svg className={`eggArt stage${stage}`} viewBox="0 0 240 300" aria-hidden="true"><use href={`/eggs/stages.svg#egg${stage}`}/></svg>}
+function CreatureArt({creature,className=''}:{creature:Creature;className?:string}){return <svg className={`creatureArt ${className}`} viewBox="0 0 200 200" aria-hidden="true"><use href={`/creatures/sprite.svg#${creature.id}`}/></svg>}
+function CreatureFace({creature,phase}:{creature:Creature;phase:Phase}){return <div className={`creature ${phase}`}><CreatureArt creature={creature}/><span>{creature.name}</span></div>}
+function Dex({discovered}:{discovered:string[]}){return <section className="dex"><div className="dexIntro"><h2>CREATURE BOOK</h2><p>世界の神話・伝説・古生物。出会ったものだけ記録される。</p></div><div className="grid">{creatures.map((c,i)=>{const seen=discovered.includes(c.id);return <article className={seen?'seen':'locked'} key={c.id}><div className="no">No.{String(i+1).padStart(3,'0')}</div><div className="dexArt">{seen?<CreatureArt creature={c}/>:<span>?</span>}</div><h3>{seen?c.name:'？？？？'}</h3>{seen?<><div className={`rarity ${c.rarity.toLowerCase()}`}>{c.rarity}</div><p>{c.trivia}</p><small>{c.region} ・ {c.category}</small><a href={c.sourceUrl} target="_blank" rel="noreferrer">根拠：{c.sourceLabel} ↗</a></>:<p>まだ出会っていない。</p>}</article>})}</div></section>}
