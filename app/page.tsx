@@ -12,308 +12,47 @@ type HistoryItem = { creatureId:string; bornAt:string; generation:number; trait:
 type GameState = { phase:Phase; taps:number; hatchAt:number; growth:number; generation:number; currentId:string|null; discovered:string[]; history:HistoryItem[]; pity:number; trait:string };
 type SaveStatus = 'idle' | 'saving' | 'saved' | 'error';
 type Store = { game:GameState; message:string };
-
 type Roll = { pick:number; trait:number; reaction:number; nextHatch:number; now:string };
 type Action = { type:'replace'; state:GameState; message?:string } | { type:'tap'; roll:Roll };
 
 const STORAGE='touch-egg-save-v2';
 const HISTORY_MAX=100;
 const PHASES:Phase[]=['egg','baby','child','adult'];
-
-// ゲームバランスはここで管理。現行の抽選率は維持。
 const UNSEEN_BONUS=1.65;
 const PITY_START=3;
 const PITY_MULTIPLIER=1.6;
-const GROW_BABY=35;
-const GROW_CHILD=55;
-const GROW_ADULT=45;
-
+const GROW_BABY=18;
+const GROW_CHILD=28;
+const GROW_ADULT=24;
 const traits=['おっとり','せっかち','食いしん坊','夜ふかし','人見知り','好奇心旺盛','よく寝る','気まぐれ'];
 const eggReactions=[
-  ['……しーん。','つるつるしている。','少しだけ温かい。','中は静かなまま。','気のせいか、かすかに重い。','何も起きない。それが気になる。'],
-  ['コトン、と小さな音。','ほんの少し揺れた。','中で何かが向きを変えた？','さっきより温かい。','殻の奥から小さな気配。','表面がわずかに震えた。'],
-  ['ピシッ。ひびが少し伸びた。','中からコツン、と返事がした。','何かが殻を押している。','卵が一瞬だけ傾いた。','かすかな鳴き声……かも。','ひびの奥が少し動いた。'],
-  ['ゴソゴソしている。','ひびがまた広がった。','中の子、かなり元気そう。','殻が小さく震え続けている。','もう姿が見えそうな気がする。','コツ、コツ、と連続で音がした。'],
-  ['今にも割れそう！','中から強く殻を押している。','ピシピシッ。ひびだらけだ。','次の一触りで来るかも……。','卵全体がぐらぐらしている。','中の子が出口を探している！']
+ ['……しーん。','つるつるしている。','少しだけ温かい。','中は静かなまま。','気のせいか、かすかに重い。','何も起きない。それが気になる。'],
+ ['コトン、と小さな音。','ほんの少し揺れた。','中で何かが向きを変えた？','さっきより温かい。','殻の奥から小さな気配。','表面がわずかに震えた。'],
+ ['ピシッ。ひびが少し伸びた。','中からコツン、と返事がした。','何かが殻を押している。','卵が一瞬だけ傾いた。','かすかな鳴き声……かも。','ひびの奥が少し動いた。'],
+ ['ゴソゴソしている。','ひびがまた広がった。','中の子、かなり元気そう。','殻が小さく震え続けている。','もう姿が見えそうな気がする。','コツ、コツ、と連続で音がした。'],
+ ['今にも割れそう！','中から強く殻を押している。','ピシピシッ。ひびだらけだ。','次の一触りで来るかも……。','卵全体がぐらぐらしている。','中の子が出口を探している！']
 ];
 const creatureReactions=['うれしそうに近づいてきた。','眠そうに目を細めた。','ちょっと得意げな顔をした。','おなかが空いたようだ。','こちらをじっと見ている。','ぴょこん、と跳ねた。','撫でてほしそう。','少し照れている。','急に元気になった。','何かを見つけたらしい。','ごきげんで体を揺らした。','眠る場所を探している。'];
-
 function randomHatch(){return 35+Math.floor(Math.random()*36)}
 const initial:GameState={phase:'egg',taps:0,hatchAt:50,growth:0,generation:1,currentId:null,discovered:[],history:[],pity:0,trait:''};
-
-function safeNumber(v:unknown,fallback:number,min=0,max=Number.MAX_SAFE_INTEGER){
-  const n=typeof v==='number'&&Number.isFinite(v)?v:fallback;
-  return Math.min(max,Math.max(min,Math.floor(n)));
-}
-
-function sanitize(raw:unknown):GameState{
-  const s=(raw&&typeof raw==='object'?raw:{}) as Partial<GameState>;
-  const ids=new Set(creatures.map(c=>c.id));
-  const discovered=Array.isArray(s.discovered)
-    ? Array.from(new Set(s.discovered.filter((x):x is string=>typeof x==='string'&&ids.has(x))))
-    : [];
-  const history=Array.isArray(s.history)
-    ? s.history
-        .filter(h=>h&&typeof h==='object'&&typeof (h as HistoryItem).creatureId==='string'&&ids.has((h as HistoryItem).creatureId))
-        .map(h=>({
-          creatureId:(h as HistoryItem).creatureId,
-          bornAt:typeof (h as HistoryItem).bornAt==='string'?(h as HistoryItem).bornAt:'',
-          generation:safeNumber((h as HistoryItem).generation,1,1),
-          trait:typeof (h as HistoryItem).trait==='string'?(h as HistoryItem).trait:'',
-        }))
-        .slice(-HISTORY_MAX)
-    : [];
-  const phase:Phase=PHASES.includes(s.phase as Phase)?s.phase as Phase:'egg';
-  const currentId=typeof s.currentId==='string'&&ids.has(s.currentId)?s.currentId:null;
-  let hatchAt=safeNumber(s.hatchAt,randomHatch(),1,9999);
-  if(phase==='egg'&&hatchAt>70)hatchAt=Math.max(35,Math.ceil(hatchAt/2));
-  const out:GameState={
-    phase,
-    taps:safeNumber(s.taps,0),
-    hatchAt,
-    growth:safeNumber(s.growth,0),
-    generation:safeNumber(s.generation,1,1),
-    currentId,
-    discovered,
-    history,
-    pity:safeNumber(s.pity,0),
-    trait:typeof s.trait==='string'?s.trait:'',
-  };
-  if(out.phase!=='egg'&&!out.currentId){
-    return {...out,phase:'egg',taps:0,growth:0,hatchAt:randomHatch(),trait:''};
-  }
-  return out;
-}
-
-function progressScore(s:GameState):[number,number,number]{
-  return [s.generation,PHASES.indexOf(s.phase),s.phase==='egg'?s.taps:s.growth];
-}
-
-function mergeSaves(local:GameState,cloud:GameState):GameState{
-  const a=progressScore(local),b=progressScore(cloud);
-  let ahead=cloud;
-  for(let i=0;i<3;i++){
-    if(a[i]!==b[i]){ahead=a[i]>b[i]?local:cloud;break;}
-  }
-  const discovered=Array.from(new Set([...local.discovered,...cloud.discovered]));
-  const seen=new Set<string>();
-  const history=[...local.history,...cloud.history]
-    .filter(h=>{const key=`${h.creatureId}@${h.bornAt}`;if(seen.has(key))return false;seen.add(key);return true;})
-    .sort((x,y)=>x.bornAt.localeCompare(y.bornAt))
-    .slice(-HISTORY_MAX);
-  return {...ahead,discovered,history,pity:Math.max(local.pity,cloud.pity)};
-}
-
-function pickCreature(state:GameState,r:number):Creature{
-  const seen=new Set(state.discovered);
-  const weights:number[]=[];
-  let total=0;
-  for(const c of creatures){
-    const unseenMultiplier=seen.has(c.id)?1:UNSEEN_BONUS;
-    const pityMultiplier=state.pity>=PITY_START&&c.rarity!=='COMMON'?PITY_MULTIPLIER:1;
-    const w=c.weight*unseenMultiplier*pityMultiplier;
-    weights.push(w);total+=w;
-  }
-  let target=r*total;
-  for(let i=0;i<creatures.length;i++){target-=weights[i];if(target<=0)return creatures[i];}
-  return creatures[creatures.length-1];
-}
-
-function pickDifferent(pool:string[],current:string,r:number){
-  const filtered=pool.filter(x=>x!==current);
-  const p=filtered.length?filtered:pool;
-  return p[Math.min(p.length-1,Math.floor(r*p.length))];
-}
-
-function reducer(store:Store,action:Action):Store{
-  if(action.type==='replace')return {game:action.state,message:action.message??store.message};
-  const prev=store.game;
-  const {pick,trait,reaction,nextHatch,now}=action.roll;
-  if(prev.phase==='egg'){
-    const taps=prev.taps+1;
-    if(taps>=prev.hatchAt){
-      const born=pickCreature(prev,pick);
-      const pickedTrait=traits[Math.min(traits.length-1,Math.floor(trait*traits.length))];
-      const discovered=prev.discovered.includes(born.id)?prev.discovered:[...prev.discovered,born.id];
-      const history=[...prev.history,{creatureId:born.id,bornAt:now,generation:prev.generation,trait:pickedTrait}].slice(-HISTORY_MAX);
-      return {
-        game:{...prev,phase:'baby',taps,growth:0,currentId:born.id,trait:pickedTrait,discovered,history,pity:born.rarity==='COMMON'?prev.pity+1:0},
-        message:`${born.name}が生まれた！ ${born.trivia}`,
-      };
-    }
-    const stage=Math.min(4,Math.floor((taps/Math.max(1,prev.hatchAt))*5));
-    return {game:{...prev,taps},message:pickDifferent(eggReactions[stage],store.message,reaction)};
-  }
-  const growth=prev.growth+1;
-  if(prev.phase==='baby'&&growth>=GROW_BABY)return {game:{...prev,phase:'child',growth:0},message:'ひとまわり大きくなった！'};
-  if(prev.phase==='child'&&growth>=GROW_CHILD)return {game:{...prev,phase:'adult',growth:0},message:'立派な姿に育った！'};
-  if(prev.phase==='adult'&&growth>=GROW_ADULT)return {game:{...prev,phase:'egg',growth:0,taps:0,hatchAt:nextHatch,generation:prev.generation+1,currentId:null,trait:''},message:'……新しい卵を産んだ！'};
-  return {game:{...prev,growth},message:pickDifferent(creatureReactions,store.message,reaction)};
-}
+function safeNumber(v:unknown,fallback:number,min=0,max=Number.MAX_SAFE_INTEGER){const n=typeof v==='number'&&Number.isFinite(v)?v:fallback;return Math.min(max,Math.max(min,Math.floor(n)))}
+function sanitize(raw:unknown):GameState{const s=(raw&&typeof raw==='object'?raw:{}) as Partial<GameState>;const ids=new Set(creatures.map(c=>c.id));const discovered=Array.isArray(s.discovered)?Array.from(new Set(s.discovered.filter((x):x is string=>typeof x==='string'&&ids.has(x)))):[];const history=Array.isArray(s.history)?s.history.filter(h=>h&&typeof h==='object'&&typeof (h as HistoryItem).creatureId==='string'&&ids.has((h as HistoryItem).creatureId)).map(h=>({creatureId:(h as HistoryItem).creatureId,bornAt:typeof (h as HistoryItem).bornAt==='string'?(h as HistoryItem).bornAt:'',generation:safeNumber((h as HistoryItem).generation,1,1),trait:typeof (h as HistoryItem).trait==='string'?(h as HistoryItem).trait:''})).slice(-HISTORY_MAX):[];const phase:Phase=PHASES.includes(s.phase as Phase)?s.phase as Phase:'egg';const currentId=typeof s.currentId==='string'&&ids.has(s.currentId)?s.currentId:null;let hatchAt=safeNumber(s.hatchAt,randomHatch(),1,9999);if(phase==='egg'&&hatchAt>70)hatchAt=Math.max(35,Math.ceil(hatchAt/2));const out={phase,taps:safeNumber(s.taps,0),hatchAt,growth:safeNumber(s.growth,0),generation:safeNumber(s.generation,1,1),currentId,discovered,history,pity:safeNumber(s.pity,0),trait:typeof s.trait==='string'?s.trait:''};if(out.phase!=='egg'&&!out.currentId)return {...out,phase:'egg',taps:0,growth:0,hatchAt:randomHatch(),trait:''};return out}
+function progressScore(s:GameState):[number,number,number]{return [s.generation,PHASES.indexOf(s.phase),s.phase==='egg'?s.taps:s.growth]}
+function mergeSaves(local:GameState,cloud:GameState):GameState{const a=progressScore(local),b=progressScore(cloud);let ahead=cloud;for(let i=0;i<3;i++){if(a[i]!==b[i]){ahead=a[i]>b[i]?local:cloud;break}}const discovered=Array.from(new Set([...local.discovered,...cloud.discovered]));const seen=new Set<string>();const history=[...local.history,...cloud.history].filter(h=>{const key=`${h.creatureId}@${h.bornAt}`;if(seen.has(key))return false;seen.add(key);return true}).sort((x,y)=>x.bornAt.localeCompare(y.bornAt)).slice(-HISTORY_MAX);return {...ahead,discovered,history,pity:Math.max(local.pity,cloud.pity)}}
+function pickCreature(state:GameState,r:number):Creature{const seen=new Set(state.discovered);const weights:number[]=[];let total=0;for(const c of creatures){const w=c.weight*(seen.has(c.id)?1:UNSEEN_BONUS)*(state.pity>=PITY_START&&c.rarity!=='COMMON'?PITY_MULTIPLIER:1);weights.push(w);total+=w}let target=r*total;for(let i=0;i<creatures.length;i++){target-=weights[i];if(target<=0)return creatures[i]}return creatures[creatures.length-1]}
+function pickDifferent(pool:string[],current:string,r:number){const filtered=pool.filter(x=>x!==current);const p=filtered.length?filtered:pool;return p[Math.min(p.length-1,Math.floor(r*p.length))]}
+function reducer(store:Store,action:Action):Store{if(action.type==='replace')return {game:action.state,message:action.message??store.message};const prev=store.game;const {pick,trait,reaction,nextHatch,now}=action.roll;if(prev.phase==='egg'){const taps=prev.taps+1;if(taps>=prev.hatchAt){const born=pickCreature(prev,pick);const pickedTrait=traits[Math.min(traits.length-1,Math.floor(trait*traits.length))];const discovered=prev.discovered.includes(born.id)?prev.discovered:[...prev.discovered,born.id];const history=[...prev.history,{creatureId:born.id,bornAt:now,generation:prev.generation,trait:pickedTrait}].slice(-HISTORY_MAX);return {game:{...prev,phase:'baby',taps,growth:0,currentId:born.id,trait:pickedTrait,discovered,history,pity:born.rarity==='COMMON'?prev.pity+1:0},message:`${born.name}が生まれた！ ${born.trivia}`}}const stage=Math.min(4,Math.floor((taps/Math.max(1,prev.hatchAt))*5));return {game:{...prev,taps},message:pickDifferent(eggReactions[stage],store.message,reaction)}}const growth=prev.growth+1;if(prev.phase==='baby'&&growth>=GROW_BABY)return {game:{...prev,phase:'child',growth:0},message:'すくすく育って、ひとまわり大きくなった！'};if(prev.phase==='child'&&growth>=GROW_CHILD)return {game:{...prev,phase:'adult',growth:0},message:'立派なおとなの姿に成長した！'};if(prev.phase==='adult'&&growth>=GROW_ADULT)return {game:{...prev,phase:'egg',growth:0,taps:0,hatchAt:nextHatch,generation:prev.generation+1,currentId:null,trait:''},message:'大切そうに、新しい卵を産んだ！'};return {game:{...prev,growth},message:pickDifferent(creatureReactions,store.message,reaction)}}
 
 export default function Home(){
-  const [store,dispatch]=useReducer(reducer,{game:initial,message:'たまごをさわってみる。'});
-  const {game,message}=store;
-  const [tab,setTab]=useState<'home'|'dex'>('home');
-  const [user,setUser]=useState<User|null>(null);
-  const [accountOpen,setAccountOpen]=useState(false);
-  const [ready,setReady]=useState(false);
-  const [saveStatus,setSaveStatus]=useState<SaveStatus>('idle');
-  const [avatarBroken,setAvatarBroken]=useState(false);
-  const gameRef=useRef(game);
-  gameRef.current=game;
-  const syncedFor=useRef<string|null>(null);
-  const accountRef=useRef<HTMLDivElement|null>(null);
-  const current=useMemo(()=>creatures.find(c=>c.id===game.currentId)||null,[game.currentId]);
-
-  useEffect(()=>{
-    let alive=true;
-    let local:GameState;
-    try{
-      const raw=localStorage.getItem(STORAGE);
-      local=raw?sanitize(JSON.parse(raw)):{...initial,hatchAt:randomHatch()};
-    }catch{
-      local={...initial,hatchAt:randomHatch()};
-    }
-    dispatch({type:'replace',state:local});
-    gameRef.current=local;
-    const s=getSupabase();
-    if(!s){setReady(true);return;}
-    const failsafe=setTimeout(()=>{if(alive)setReady(true);},4000);
-
-    const syncFor=async(u:User)=>{
-      if(syncedFor.current===u.id)return;
-      syncedFor.current=u.id;
-      try{
-        const {data,error}=await s.from('game_saves').select('state').eq('user_id',u.id).maybeSingle();
-        if(error)throw error;
-        if(!alive)return;
-        if(data?.state){
-          const merged=mergeSaves(gameRef.current,sanitize(data.state));
-          dispatch({type:'replace',state:merged});
-          gameRef.current=merged;
-        }
-      }catch(e){
-        console.error('[touch-egg] cloud load failed',e);
-        if(alive)setSaveStatus('error');
-      }finally{
-        if(alive)setReady(true);
-      }
-    };
-
-    s.auth.getSession()
-      .then(({data})=>{
-        if(!alive)return;
-        const u=data.session?.user??null;
-        setUser(u);
-        if(u)void syncFor(u);else setReady(true);
-      })
-      .catch(e=>{console.error('[touch-egg] getSession failed',e);if(alive)setReady(true);});
-
-    const {data:sub}=s.auth.onAuthStateChange((event,session)=>{
-      if(!alive)return;
-      const u=session?.user??null;
-      setUser(u);
-      setAvatarBroken(false);
-      if(u&&(event==='SIGNED_IN'||event==='INITIAL_SESSION'||event==='TOKEN_REFRESHED'))void syncFor(u);
-      if(!u){syncedFor.current=null;setReady(true);}
-    });
-    return()=>{alive=false;clearTimeout(failsafe);sub.subscription.unsubscribe();};
-  },[]);
-
-  useEffect(()=>{
-    if(!ready)return;
-    try{localStorage.setItem(STORAGE,JSON.stringify(game));}
-    catch(e){console.error('[touch-egg] local save failed',e);}
-    const s=getSupabase();
-    if(!user||!s)return;
-    setSaveStatus('saving');
-    const timer=setTimeout(async()=>{
-      try{
-        const {error}=await s.from('game_saves').upsert({user_id:user.id,state:game,updated_at:new Date().toISOString()});
-        if(error)throw error;
-        setSaveStatus('saved');
-      }catch(e){
-        console.error('[touch-egg] cloud save failed',e);
-        setSaveStatus('error');
-      }
-    },700);
-    return()=>clearTimeout(timer);
-  },[game,user,ready]);
-
-  useEffect(()=>{
-    if(!accountOpen)return;
-    const onDown=(e:PointerEvent)=>{if(!accountRef.current?.contains(e.target as Node))setAccountOpen(false);};
-    const onKey=(e:KeyboardEvent)=>{if(e.key==='Escape')setAccountOpen(false);};
-    document.addEventListener('pointerdown',onDown);
-    document.addEventListener('keydown',onKey);
-    return()=>{document.removeEventListener('pointerdown',onDown);document.removeEventListener('keydown',onKey);};
-  },[accountOpen]);
-
-  const tap=useCallback(()=>{
-    dispatch({type:'tap',roll:{pick:Math.random(),trait:Math.random(),reaction:Math.random(),nextHatch:randomHatch(),now:new Date().toISOString()}});
-  },[]);
-
-  async function login(){
-    const s=getSupabase();
-    if(!s){dispatch({type:'replace',state:gameRef.current,message:'VercelにSupabase環境変数を設定するとGoogleログインが使えます。'});return;}
-    try{
-      const {error}=await s.auth.signInWithOAuth({provider:'google',options:{redirectTo:window.location.origin}});
-      if(error)throw error;
-    }catch(e){
-      console.error('[touch-egg] login failed',e);
-      dispatch({type:'replace',state:gameRef.current,message:'ログインに失敗しました。時間をおいて試してください。'});
-    }
-  }
-
-  async function logout(){
-    const s=getSupabase();
-    try{if(s)await s.auth.signOut();}catch(e){console.error('[touch-egg] logout failed',e);}
-    setUser(null);setAccountOpen(false);setSaveStatus('idle');syncedFor.current=null;
-  }
-
-  const displayName=user?.user_metadata?.full_name||user?.user_metadata?.name||user?.email?.split('@')[0]||'ユーザー';
-  const rawAvatar=user?.user_metadata?.avatar_url||user?.user_metadata?.picture||'';
-  const avatarUrl=avatarBroken?'':rawAvatar;
-  const crack=game.phase==='egg'?Math.min(4,Math.floor((game.taps/Math.max(1,game.hatchAt))*5)):0;
-  const progress=game.phase==='egg'?Math.min(100,Math.round(game.taps/game.hatchAt*100)):0;
-  const remaining=game.phase==='egg'?Math.max(0,game.hatchAt-game.taps):0;
-  const footerText=!user
-    ? 'ログインすると図鑑と世代をクラウド保存できます'
-    : saveStatus==='error'?'⚠ クラウド保存に失敗しています（この端末には保存済み）'
-    : saveStatus==='saving'?`${displayName}として保存中…`
-    : `${displayName}としてクラウド保存中`;
-
-  return <main>
-    <header><div><h1>Touch Egg</h1><p>触るだけ。いつか生まれる。</p></div>
-      {user?<div className="accountWrap" ref={accountRef}>
-        <button className="accountButton" onClick={()=>setAccountOpen(v=>!v)} aria-expanded={accountOpen}>
-          {avatarUrl?<img src={avatarUrl} alt="" referrerPolicy="no-referrer" onError={()=>setAvatarBroken(true)}/>:<span className="avatarFallback">{displayName.slice(0,1)}</span>}
-          <span className="accountName">{displayName}</span><span className="chev">⌄</span>
-        </button>
-        {accountOpen&&<div className="accountMenu">
-          <div className="accountIdentity">{avatarUrl?<img src={avatarUrl} alt="" referrerPolicy="no-referrer" onError={()=>setAvatarBroken(true)}/>:<span className="avatarFallback large">{displayName.slice(0,1)}</span>}<div><strong>{displayName}</strong><small>{user.email}</small></div></div>
-          <button onClick={logout}>ログアウト</button>
-        </div>}
-      </div>:<button className="login" onClick={login}>Googleでログイン</button>}
-    </header>
-    <nav><button className={tab==='home'?'active':''} onClick={()=>setTab('home')}>たまご</button><button className={tab==='dex'?'active':''} onClick={()=>setTab('dex')}>図鑑 <span>{game.discovered.length}/{creatures.length}</span></button></nav>
-    {tab==='home'?<section className="play">
-      <div className="status">GEN {game.generation} ・ {game.phase==='egg'?'？？？':game.phase.toUpperCase()}</div>
-      <button className="touchTarget" onClick={tap} aria-label="さわる">
-        {game.phase==='egg'?<EggIllustration stage={crack}/>:current&&<CreatureFace creature={current} phase={game.phase}/>} 
-      </button>
-      <div className="message" aria-live="polite">{message}</div>
-      {game.phase==='egg'&&<div className="eggProgress"><div className="progressTrack"><i style={{width:`${progress}%`}}/></div><strong>{game.taps} / {game.hatchAt} 回</strong><small>{remaining>0?`あと ${remaining} 回くらいで何か起きそう`:'もうすぐ…！'}</small></div>}
-      {current&&<div className="card"><div className="cardTop"><strong>{current.name}</strong><span className={`rarity ${current.rarity.toLowerCase()}`}>{rarityLabel[current.rarity]}</span></div><p>{current.trivia}</p><small>{current.region} ・ {current.category} ・ {game.trait}</small></div>}
-      <p className="hint">{game.phase==='egg'?`タッチ ${game.taps}回`:`成長 ${game.growth} ・ さわって育てる`}</p>
-    </section>:<Dex discovered={game.discovered}/>} 
-    <footer>{footerText}</footer>
-  </main>;
+ const [store,dispatch]=useReducer(reducer,{game:initial,message:'たまごをさわってみる。'});const {game,message}=store;const [tab,setTab]=useState<'home'|'dex'>('home');const [user,setUser]=useState<User|null>(null);const [accountOpen,setAccountOpen]=useState(false);const [ready,setReady]=useState(false);const [saveStatus,setSaveStatus]=useState<SaveStatus>('idle');const [avatarBroken,setAvatarBroken]=useState(false);const gameRef=useRef(game);gameRef.current=game;const syncedFor=useRef<string|null>(null);const accountRef=useRef<HTMLDivElement|null>(null);const current=useMemo(()=>creatures.find(c=>c.id===game.currentId)||null,[game.currentId]);
+ useEffect(()=>{let alive=true;let local:GameState;try{const raw=localStorage.getItem(STORAGE);local=raw?sanitize(JSON.parse(raw)):{...initial,hatchAt:randomHatch()}}catch{local={...initial,hatchAt:randomHatch()}}dispatch({type:'replace',state:local});gameRef.current=local;const s=getSupabase();if(!s){setReady(true);return}const failsafe=setTimeout(()=>{if(alive)setReady(true)},4000);const syncFor=async(u:User)=>{if(syncedFor.current===u.id)return;syncedFor.current=u.id;try{const {data,error}=await s.from('game_saves').select('state').eq('user_id',u.id).maybeSingle();if(error)throw error;if(!alive)return;if(data?.state){const merged=mergeSaves(gameRef.current,sanitize(data.state));dispatch({type:'replace',state:merged});gameRef.current=merged}}catch(e){console.error('[touch-egg] cloud load failed',e);if(alive)setSaveStatus('error')}finally{if(alive)setReady(true)}};s.auth.getSession().then(({data})=>{if(!alive)return;const u=data.session?.user??null;setUser(u);if(u)void syncFor(u);else setReady(true)}).catch(e=>{console.error('[touch-egg] getSession failed',e);if(alive)setReady(true)});const {data:sub}=s.auth.onAuthStateChange((event,session)=>{if(!alive)return;const u=session?.user??null;setUser(u);setAvatarBroken(false);if(u&&(event==='SIGNED_IN'||event==='INITIAL_SESSION'||event==='TOKEN_REFRESHED'))void syncFor(u);if(!u){syncedFor.current=null;setReady(true)}});return()=>{alive=false;clearTimeout(failsafe);sub.subscription.unsubscribe()}},[]);
+ useEffect(()=>{if(!ready)return;try{localStorage.setItem(STORAGE,JSON.stringify(game))}catch(e){console.error('[touch-egg] local save failed',e)}const s=getSupabase();if(!user||!s)return;setSaveStatus('saving');const timer=setTimeout(async()=>{try{const {error}=await s.from('game_saves').upsert({user_id:user.id,state:game,updated_at:new Date().toISOString()});if(error)throw error;setSaveStatus('saved')}catch(e){console.error('[touch-egg] cloud save failed',e);setSaveStatus('error')}},700);return()=>clearTimeout(timer)},[game,user,ready]);
+ useEffect(()=>{if(!accountOpen)return;const onDown=(e:PointerEvent)=>{if(!accountRef.current?.contains(e.target as Node))setAccountOpen(false)};const onKey=(e:KeyboardEvent)=>{if(e.key==='Escape')setAccountOpen(false)};document.addEventListener('pointerdown',onDown);document.addEventListener('keydown',onKey);return()=>{document.removeEventListener('pointerdown',onDown);document.removeEventListener('keydown',onKey)}},[accountOpen]);
+ const tap=useCallback(()=>dispatch({type:'tap',roll:{pick:Math.random(),trait:Math.random(),reaction:Math.random(),nextHatch:randomHatch(),now:new Date().toISOString()}}),[]);
+ async function login(){const s=getSupabase();if(!s){dispatch({type:'replace',state:gameRef.current,message:'VercelにSupabase環境変数を設定するとGoogleログインが使えます。'});return}try{const {error}=await s.auth.signInWithOAuth({provider:'google',options:{redirectTo:window.location.origin}});if(error)throw error}catch(e){console.error('[touch-egg] login failed',e);dispatch({type:'replace',state:gameRef.current,message:'ログインに失敗しました。時間をおいて試してください。'})}}
+ async function logout(){const s=getSupabase();try{if(s)await s.auth.signOut()}catch(e){console.error('[touch-egg] logout failed',e)}setUser(null);setAccountOpen(false);setSaveStatus('idle');syncedFor.current=null}
+ const displayName=user?.user_metadata?.full_name||user?.user_metadata?.name||user?.email?.split('@')[0]||'ユーザー';const rawAvatar=user?.user_metadata?.avatar_url||user?.user_metadata?.picture||'';const avatarUrl=avatarBroken?'':rawAvatar;const crack=game.phase==='egg'?Math.min(4,Math.floor((game.taps/Math.max(1,game.hatchAt))*5)):0;const progress=game.phase==='egg'?Math.min(100,Math.round(game.taps/game.hatchAt*100)):0;const remaining=game.phase==='egg'?Math.max(0,game.hatchAt-game.taps):0;const phaseLimit=game.phase==='baby'?GROW_BABY:game.phase==='child'?GROW_CHILD:GROW_ADULT;const growthProgress=game.phase==='egg'?0:Math.min(100,Math.round(game.growth/phaseLimit*100));const phaseLabel=game.phase==='baby'?'あかちゃん':game.phase==='child'?'こども':game.phase==='adult'?'おとな':'たまご';const nextLabel=game.phase==='baby'?'こども':game.phase==='child'?'おとな':game.phase==='adult'?'次のたまご':'';const footerText=!user?'ログインすると図鑑と世代をクラウド保存できます':saveStatus==='error'?'⚠ クラウド保存に失敗しています（この端末には保存済み）':saveStatus==='saving'?`${displayName}として保存中…`:`${displayName}としてクラウド保存中`;
+ return <main><header><div><h1>Touch Egg</h1><p>触るだけ。いつか生まれる。</p></div>{user?<div className="accountWrap" ref={accountRef}><button className="accountButton" onClick={()=>setAccountOpen(v=>!v)} aria-expanded={accountOpen}>{avatarUrl?<img src={avatarUrl} alt="" referrerPolicy="no-referrer" onError={()=>setAvatarBroken(true)}/>:<span className="avatarFallback">{displayName.slice(0,1)}</span>}<span className="accountName">{displayName}</span><span className="chev">⌄</span></button>{accountOpen&&<div className="accountMenu"><div className="accountIdentity">{avatarUrl?<img src={avatarUrl} alt="" referrerPolicy="no-referrer" onError={()=>setAvatarBroken(true)}/>:<span className="avatarFallback large">{displayName.slice(0,1)}</span>}<div><strong>{displayName}</strong><small>{user.email}</small></div></div><button onClick={logout}>ログアウト</button></div>}</div>:<button className="login" onClick={login}>Googleでログイン</button>}</header><nav><button className={tab==='home'?'active':''} onClick={()=>setTab('home')}>たまご</button><button className={tab==='dex'?'active':''} onClick={()=>setTab('dex')}>図鑑 <span>{game.discovered.length}/{creatures.length}</span></button></nav>{tab==='home'?<section className="play"><div className="status">GEN {game.generation} ・ {game.phase==='egg'?'？？？':phaseLabel}</div><button className="touchTarget" onClick={tap} aria-label="さわる">{game.phase==='egg'?<EggIllustration stage={crack}/>:current&&<CreatureFace creature={current} phase={game.phase}/>}</button><div className="message" aria-live="polite">{message}</div>{game.phase==='egg'?<div className="eggProgress"><div className="progressTrack"><i style={{width:`${progress}%`}}/></div><strong>{game.taps} / {game.hatchAt} 回</strong><small>{remaining>0?`あと ${remaining} 回くらいで何か起きそう`:'もうすぐ…！'}</small></div>:<div className="growthPanel"><div className="growthLabels"><strong>{phaseLabel}</strong><span>{nextLabel}まで {growthProgress}%</span></div><div className="progressTrack growthTrack"><i style={{width:`${growthProgress}%`}}/></div><div className="growthSteps"><span className={game.phase==='baby'?'now':''}>あかちゃん</span><span className={game.phase==='child'?'now':''}>こども</span><span className={game.phase==='adult'?'now':''}>おとな</span></div></div>}{current&&<div className="card"><div className="cardTop"><strong>{current.name}</strong><span className={`rarity ${current.rarity.toLowerCase()}`}>{rarityLabel[current.rarity]}</span></div><p>{current.trivia}</p><small>{current.region} ・ {current.category} ・ {game.trait}</small></div>}<p className="hint">{game.phase==='egg'?`タッチ ${game.taps}回`:`成長 ${game.growth} ・ さわるほど大きくなる`}</p></section>:<Dex discovered={game.discovered}/>}<footer>{footerText}</footer></main>
 }
-
-function CreatureFace({creature,phase}:{creature:Creature;phase:Phase}){return <div className={`creature ${phase}`}><CreatureIllustration id={creature.id}/><span>{creature.name}</span></div>}
-function Dex({discovered}:{discovered:string[]}){
-  const seenSet=useMemo(()=>new Set(discovered),[discovered]);
-  return <section className="dex"><div className="dexIntro"><h2>CREATURE BOOK</h2><p>世界の神話・伝説・古生物。出会ったものだけ記録される。</p></div><div className="grid">{creatures.map((c,i)=>{const seen=seenSet.has(c.id);return <article className={seen?'seen':'locked'} key={c.id}><div className="no">No.{String(i+1).padStart(3,'0')}</div><div className="dexArt">{seen?<CreatureIllustration id={c.id}/>:<span>?</span>}</div><h3>{seen?c.name:'？？？？'}</h3>{seen?<><div className={`rarity ${c.rarity.toLowerCase()}`}>{c.rarity}</div><p>{c.trivia}</p><small>{c.region} ・ {c.category}</small><a href={c.sourceUrl} target="_blank" rel="noreferrer">根拠：{c.sourceLabel} ↗</a></>:<p>まだ出会っていない。</p>}</article>})}</div></section>;
-}
+function CreatureFace({creature,phase}:{creature:Creature;phase:Phase}){return <div className={`creature ${phase}`}><div className="creatureGlow"/><CreatureIllustration id={creature.id}/><span>{creature.name}</span></div>}
+function Dex({discovered}:{discovered:string[]}){const seenSet=useMemo(()=>new Set(discovered),[discovered]);return <section className="dex"><div className="dexIntro"><h2>CREATURE BOOK</h2><p>世界の神話・伝説・古生物。出会ったものだけ記録される。</p></div><div className="grid">{creatures.map((c,i)=>{const seen=seenSet.has(c.id);return <article className={seen?'seen':'locked'} key={c.id}><div className="no">No.{String(i+1).padStart(3,'0')}</div><div className="dexArt">{seen?<CreatureIllustration id={c.id}/>:<span>?</span>}</div><h3>{seen?c.name:'？？？？'}</h3>{seen?<><div className={`rarity ${c.rarity.toLowerCase()}`}>{c.rarity}</div><p>{c.trivia}</p><small>{c.region} ・ {c.category}</small><a href={c.sourceUrl} target="_blank" rel="noreferrer">根拠：{c.sourceLabel} ↗</a></>:<p>まだ出会っていない。</p>}</article>})}</div></section>}
