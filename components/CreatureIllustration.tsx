@@ -1,64 +1,35 @@
 'use client';
 
-const arts: Record<string,string> = {
-phoenix:`<svg viewBox="0 0 200 200"><g stroke="#66513a" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M49 126C25 108 25 77 50 58c4 25 19 31 32 38M151 126c24-18 24-49-1-68-4 25-19 31-32 38" fill="#ef8d46"/><ellipse cx="100" cy="101" rx="48" ry="57" fill="#f7b34e"/><path d="M82 56c6-25 24-34 36-37-2 15 4 22 13 28-18 0-26 8-31 18" fill="#ee7044"/><path d="M70 151c10 17 26 24 30 30 5-9 10-13 15-20 7 8 14 13 19 20 5-18 14-24 23-36-28 13-41 12-57 6-10 5-17 7-30 0z" fill="#e96b3f"/></g><circle cx="84" cy="92" r="6" fill="#2d2924"/><circle cx="116" cy="92" r="6" fill="#2d2924"/><circle cx="86" cy="90" r="2" fill="#fff"/><circle cx="118" cy="90" r="2" fill="#fff"/><path d="M96 105h10l-5 7z" fill="#9c5b2a"/></svg>`,
-griffin:`<svg viewBox="0 0 200 200"><g stroke="#66513a" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><ellipse cx="105" cy="119" rx="53" ry="43" fill="#bd8a57"/><circle cx="84" cy="75" r="38" fill="#f0e3cb"/><path d="M52 62c-24 11-32 34-25 53 12-13 24-17 38-14M148 95c26-16 34-40 30-58-17 6-29 16-39 34" fill="#c59768"/><path d="M62 46c8-14 18-21 34-24l-4 17 17-10-3 18" fill="#f7f1e6"/><path d="M52 78l-24 8 25 10" fill="#d79c42"/><path d="M119 145c6 17 19 25 36 25-7-9-8-16-5-25" fill="none"/></g><circle cx="77" cy="72" r="6" fill="#2d2924"/><circle cx="79" cy="70" r="2" fill="#fff"/></svg>`,
-unicorn:`<svg viewBox="0 0 200 200"><g stroke="#66513a" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><ellipse cx="102" cy="122" rx="51" ry="39" fill="#f7f2eb"/><circle cx="82" cy="79" r="35" fill="#fff9f1"/><path d="M80 44L92 12l11 37" fill="#e4c26b"/><path d="M102 49c14-15 32-12 37-3-14 2-19 10-22 20M130 112c22 0 31 9 34 18-13 2-19 9-24 22-11-7-14-18-10-40z" fill="#b9acd9"/><path d="M62 95c8 7 16 7 23 0M74 146v29M111 151v24" fill="none"/></g><circle cx="73" cy="79" r="6" fill="#2d2924"/><circle cx="75" cy="77" r="2" fill="#fff"/></svg>`,
-cerberus:`<svg viewBox="0 0 200 200"><g stroke="#66513a" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><ellipse cx="101" cy="130" rx="55" ry="42" fill="#4f514f"/><circle cx="63" cy="83" r="34" fill="#5e605f"/><circle cx="101" cy="70" r="38" fill="#5e605f"/><circle cx="139" cy="83" r="34" fill="#5e605f"/><path d="M151 142c21 6 26 21 18 30-7-10-14-13-23-13" fill="none"/></g><g fill="#2d2924"><circle cx="55" cy="82" r="5"/><circle cx="72" cy="82" r="5"/><circle cx="91" cy="69" r="5"/><circle cx="112" cy="69" r="5"/><circle cx="130" cy="82" r="5"/><circle cx="147" cy="82" r="5"/></g><g fill="#f2b198"><circle cx="64" cy="97" r="4"/><circle cx="101" cy="86" r="4"/><circle cx="138" cy="97" r="4"/></g></svg>`,
-kappa:`<svg viewBox="0 0 200 200"><g stroke="#66513a" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><ellipse cx="100" cy="119" rx="53" ry="52" fill="#83ad62"/><circle cx="100" cy="73" r="39" fill="#91ba69"/><ellipse cx="100" cy="41" rx="30" ry="12" fill="#dce7d1"/><path d="M68 40c8-17 18-24 32-25 14 1 24 8 32 25-9-5-17-5-24 0-5-8-11-8-16 0-7-5-15-5-24 0z" fill="#567b49"/><path d="M49 111c-14 11-18 25-12 39M151 111c14 11 18 25 12 39" fill="none"/></g><circle cx="87" cy="72" r="6" fill="#2d2924"/><circle cx="113" cy="72" r="6" fill="#2d2924"/><path d="M91 88h18l-9 8z" fill="#d7b45e"/><ellipse cx="102" cy="128" rx="26" ry="31" fill="#a8c87f"/></svg>`,
-qilin:`<svg viewBox="0 0 200 200"><g stroke="#66513a" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><ellipse cx="103" cy="123" rx="50" ry="38" fill="#f5eee0"/><circle cx="83" cy="78" r="34" fill="#fbf5e8"/><path d="M78 48c-6-17-1-27 8-34M91 50c5-18 15-25 27-28" fill="none"/><path d="M55 61c-18-10-28-4-34 5 16 1 22 7 27 17M111 56c18-12 31-9 38-1-13 4-19 10-23 20" fill="#79aaa0"/><path d="M62 98c8-17 20-25 36-28 18 5 30 14 37 30-16-6-26-3-35 5-10-7-22-10-38-7z" fill="#6fa598"/><path d="M63 145v29M109 151v23" fill="none"/></g><circle cx="76" cy="79" r="6" fill="#2d2924"/></svg>`,
-dragon:`<svg viewBox="0 0 200 200"><g stroke="#5d4938" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M143 129c31 2 40 20 25 39-1-14-11-18-26-13" fill="none" stroke-width="8"/><path d="M61 105C27 91 21 63 34 43c9 21 24 30 43 35M139 105c34-14 40-42 27-62-9 21-24 30-43 35" fill="#bd87c9"/><ellipse cx="101" cy="122" rx="50" ry="44" fill="#7fc6a0"/><circle cx="100" cy="76" r="39" fill="#8fd2aa"/><path d="M71 50L58 25l27 14M129 50l13-25-27 14" fill="#f0cf77"/><path d="M89 118c2 18 6 31 12 40 7-10 11-23 12-40" fill="#d8efbf"/><path d="M74 75l-18 5 17 9M126 75l18 5-17 9" fill="#8fd2aa"/></g><circle cx="86" cy="72" r="7" fill="#2f2925"/><circle cx="114" cy="72" r="7" fill="#2f2925"/><circle cx="88" cy="69" r="2.5" fill="#fff"/><circle cx="116" cy="69" r="2.5" fill="#fff"/><path d="M93 91q7 7 14 0" fill="none" stroke="#5d4938" stroke-width="3" stroke-linecap="round"/><circle cx="77" cy="90" r="8" fill="#f2a9a6" opacity=".5"/><circle cx="123" cy="90" r="8" fill="#f2a9a6" opacity=".5"/></svg>`,
-pegasus:`<svg viewBox="0 0 200 200"><g stroke="#66513a" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M55 106C23 92 19 67 31 45c10 21 27 31 48 34M145 106c32-14 36-39 24-61-10 21-27 31-48 34" fill="#d9d8f6"/><ellipse cx="105" cy="126" rx="52" ry="38" fill="#fff7ee"/><circle cx="82" cy="78" r="35" fill="#fffaf4"/><path d="M57 55c-13-12-25-9-31 0 13 3 20 10 23 22M103 50c18-15 34-9 38 2-14 1-22 8-27 20" fill="#cdbce8"/><path d="M115 146c18 7 31 3 40-11 5 15-1 28-15 38-3-13-12-19-25-21" fill="#e6b8d3"/><path d="M72 145v30M112 151v24" fill="none"/></g><circle cx="73" cy="77" r="7" fill="#2d2924"/><circle cx="75" cy="74" r="2.5" fill="#fff"/><path d="M57 94q13 9 25 0" fill="none" stroke="#8f6f62" stroke-width="3" stroke-linecap="round"/><circle cx="55" cy="85" r="7" fill="#f1b3b2" opacity=".45"/></svg>`,
-kitsune:`<svg viewBox="0 0 200 200"><g stroke="#66513a" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M60 132C25 120 13 92 29 68c6 22 20 33 41 34M72 144c-28 10-42 30-36 48 12-14 28-20 46-18M140 132c35-12 47-40 31-64-6 22-20 33-41 34" fill="#e99a55"/><ellipse cx="100" cy="126" rx="48" ry="42" fill="#efaa63"/><circle cx="100" cy="77" r="39" fill="#f2b66f"/><path d="M68 52L67 18l25 27M132 52l1-34-25 27" fill="#e58e4b"/><path d="M79 91c12 12 30 12 42 0-2 22-10 35-21 35S81 113 79 91z" fill="#fff2dc"/></g><path d="M79 73q8-7 16 0M105 73q8-7 16 0" fill="none" stroke="#3b3029" stroke-width="4" stroke-linecap="round"/><path d="M96 91h8l-4 5z" fill="#3b3029"/><circle cx="72" cy="88" r="8" fill="#f19a95" opacity=".5"/><circle cx="128" cy="88" r="8" fill="#f19a95" opacity=".5"/></svg>`,
-baku:`<svg viewBox="0 0 200 200"><g stroke="#66513a" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><ellipse cx="105" cy="126" rx="53" ry="43" fill="#91b6ae"/><circle cx="89" cy="78" r="38" fill="#9fc4bb"/><path d="M61 61C36 45 25 58 29 76c10-9 21-11 33-4M116 58c24-17 38-4 33 14-11-7-22-8-34-1" fill="#d0b5cf"/><path d="M69 88c-3 26 7 44 29 47 18 2 26-10 20-22-5-10-19-8-22 2" fill="none" stroke-width="10"/><path d="M60 117l14 13M145 112l-15 17M69 148v25M119 153v20" fill="none"/></g><circle cx="78" cy="73" r="6.5" fill="#2d2924"/><circle cx="80" cy="71" r="2" fill="#fff"/><path d="M116 76l12 6-12 5" fill="#d9c36e"/></svg>`,
-ammonite:`<svg viewBox="0 0 200 200"><g stroke="#66513a" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M131 46c38 18 45 62 20 91-17 20-46 30-71 17-27-14-34-48-17-72 16-23 50-28 71-9 17 16 17 43 1 57-13 12-34 10-43-3-8-12-4-29 8-35 9-4 20 1 23 10" fill="#d8a85d"/><path d="M86 140c-26 0-43 11-46 29 13-4 23 0 29 10 5-13 14-18 26-18 4 8 10 13 18 16 0-13-2-24-8-34" fill="#7ca3a0"/></g><circle cx="74" cy="142" r="6" fill="#2d2924"/><circle cx="76" cy="140" r="2" fill="#fff"/></svg>`,
-trilobite:`<svg viewBox="0 0 200 200"><g stroke="#405658" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"><ellipse cx="100" cy="108" rx="62" ry="71" fill="#607879" stroke="#66513a" stroke-width="3"/><path d="M100 39v138M69 50c15 16 15 101 0 119M131 50c-15 16-15 101 0 119M49 73h102M41 96h118M39 120h122M45 145h110" fill="none"/><path d="M44 83L25 70M42 105L20 105M45 130L24 143M156 83l19-13M158 105h22M155 130l21 13" fill="none" stroke="#66513a" stroke-width="3"/></g><circle cx="78" cy="69" r="6" fill="#2d2924"/><circle cx="122" cy="69" r="6" fill="#2d2924"/></svg>`,
-archaeopteryx:`<svg viewBox="0 0 200 200"><g stroke="#66513a" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><ellipse cx="101" cy="112" rx="43" ry="48" fill="#9fb0bf"/><circle cx="96" cy="72" r="31" fill="#e8e1d6"/><path d="M62 102c-31-2-46 15-47 32 18-6 34-2 49 10M140 102c31-2 46 15 47 32-18-6-34-2-49 10" fill="#8ea0af"/><path d="M77 49c5-13 13-20 25-22l-2 13 13-7-3 15" fill="#a7b8c6"/><path d="M74 73l-21 7 20 9" fill="#c0a264"/><path d="M95 151l-9 25M111 151l10 25" fill="none"/></g><circle cx="89" cy="70" r="6" fill="#2d2924"/></svg>`,
-dunkleosteus:`<svg viewBox="0 0 200 200"><g stroke="#66513a" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M33 105c16-43 64-63 109-45 19 8 31 22 39 41-9 26-30 44-57 50-40 9-76-10-91-46z" fill="#71817c"/><path d="M52 90c11-28 38-42 66-38-9 9-12 19-11 31 16-8 31-8 46-2-9 8-13 16-13 26-13-9-27-14-42-13-17 0-32 6-46 17z" fill="#586966"/><path d="M156 80l32-18-7 30 15 20-32 5" fill="#74857f"/><path d="M70 117c17 12 35 15 54 8-8 18-39 21-54-8z" fill="#e8ddd0"/><path d="M78 119l8 10 8-8 9 10 9-9" fill="none"/></g><circle cx="76" cy="94" r="7" fill="#2d2924"/><circle cx="78" cy="92" r="2" fill="#fff"/></svg>`,
-mammoth:`<svg viewBox="0 0 200 200"><g stroke="#66513a" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><ellipse cx="109" cy="127" rx="58" ry="43" fill="#a77d5a"/><circle cx="83" cy="79" r="40" fill="#b58a66"/><path d="M49 58C26 49 20 66 30 83c9-10 20-13 32-8M113 57c22-10 33 4 27 20-10-8-20-9-31-4" fill="#c29a7a"/><path d="M79 91c-2 28 3 53 20 65 12 9 23 2 21-10-2-9-12-13-20-7" fill="none" stroke-width="11"/><path d="M65 97c-11 13-14 29-4 40M101 98c13 10 17 25 12 38" fill="none" stroke="#f4e7cb" stroke-width="6"/><path d="M51 49c10-24 53-31 72-3-12-5-20-2-25 6-8-8-16-8-23 1-7-6-15-8-24-4z" fill="#8b654a"/></g><circle cx="73" cy="76" r="6" fill="#2d2924"/><circle cx="75" cy="74" r="2" fill="#fff"/></svg>`,
-smilodon:`<svg viewBox="0 0 200 200"><g stroke="#66513a" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><ellipse cx="105" cy="126" rx="54" ry="42" fill="#d5a060"/><circle cx="84" cy="78" r="39" fill="#e0ad6b"/><path d="M55 55L48 25l30 21M113 46l27-21-3 34" fill="#c8874a"/><path d="M123 140c24 3 36 15 35 31 10-12 9-27-4-36" fill="none" stroke-width="7"/><path d="M66 94l11 31 10-31M98 94l10 31 11-31" fill="#fff5dc"/><path d="M65 49l10 10M104 48l11 11M57 116h19M51 130h25" fill="none" stroke="#9c663c"/></g><circle cx="73" cy="74" r="7" fill="#2d2924"/><circle cx="98" cy="74" r="7" fill="#2d2924"/><circle cx="75" cy="72" r="2" fill="#fff"/><circle cx="100" cy="72" r="2" fill="#fff"/><path d="M81 89h10l-5 5z" fill="#6e4935"/></svg>`,
-parasaurolophus:`<svg viewBox="0 0 200 200"><g stroke="#66513a" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M60 117c-26-4-42 5-51 22 16-5 32-2 48 11" fill="#73aa82"/><ellipse cx="112" cy="125" rx="57" ry="39" fill="#86bc8d"/><circle cx="85" cy="82" r="35" fill="#94c99a"/><path d="M74 52C65 29 82 14 121 18c-20 8-29 20-29 36" fill="#dc9b65"/><path d="M61 82L38 91l23 10M79 145l-8 30M125 151l9 24" fill="none"/><circle cx="118" cy="120" r="6" fill="#e4c56f"/><circle cx="137" cy="130" r="5" fill="#e4c56f"/></g><circle cx="77" cy="79" r="6.5" fill="#2d2924"/><circle cx="79" cy="77" r="2" fill="#fff"/><path d="M61 99q11 7 21 0" fill="none" stroke="#66513a" stroke-width="3" stroke-linecap="round"/></svg>`,
-mosasaurus:`<svg viewBox="0 0 200 200"><g stroke="#66513a" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M30 105c20-42 69-59 112-35 18 10 30 26 36 45-15 23-38 37-65 38-38 2-70-16-83-48z" fill="#70aaa7"/><path d="M150 78l36-22-9 34 18 23-37 8" fill="#5b9796"/><path d="M88 145l23 35 10-33M69 72L54 39l35 24" fill="#8fc4bf"/><path d="M49 112c27 14 57 14 85 1-8 30-66 32-85-1z" fill="#eaf4e7"/><path d="M61 118l7 9 8-10 9 11 8-11 9 10 8-12 9 9" fill="none"/></g><circle cx="65" cy="91" r="8" fill="#2d2924"/><circle cx="68" cy="88" r="2.5" fill="#fff"/><circle cx="46" cy="96" r="8" fill="#e99993" opacity=".42"/></svg>`
-};
-
 export type GrowthPhase = 'baby' | 'child' | 'adult';
 
-const stageDecorations: Record<GrowthPhase,string> = {
-  baby:`<g class="growth-decoration baby-decoration" stroke="#9e7651" stroke-width="2.5" stroke-linejoin="round"><path d="M62 142l12 11 12-10 14 12 14-12 13 10 12-11-7 31c-21 11-43 11-64 0z" fill="#fff7e7"/><path d="M74 160c17 8 35 8 52 0" fill="none" opacity=".45"/><circle cx="55" cy="105" r="5" fill="#f1aba4" stroke="none"/><circle cx="145" cy="105" r="5" fill="#f1aba4" stroke="none"/></g>`,
-  child:`<g class="growth-decoration child-decoration" stroke-linecap="round" stroke-linejoin="round"><path d="M76 146q24 16 48 0" fill="none" stroke="#6f8b68" stroke-width="5"/><path d="M99 153c-2 12 9 19 17 10 5-7-2-14-17-10z" fill="#a8c985" stroke="#617f59" stroke-width="2"/><path d="M35 55l3 7 7 3-7 3-3 7-3-7-7-3 7-3zM164 75l2 5 5 2-5 2-2 5-2-5-5-2 5-2z" fill="#edc96b" stroke="none"/></g>`,
-  adult:`<g class="growth-decoration adult-decoration" fill="none" stroke="#d8ad4e" stroke-width="2.5" stroke-linecap="round"><path d="M42 55C19 82 19 124 44 151M158 55c23 27 23 69-2 96" opacity=".52"/><path d="M40 54l4 9 9 4-9 4-4 9-4-9-9-4 9-4zM160 44l3 7 7 3-7 3-3 7-3-7-7-3 7-3zM166 139l3 7 7 3-7 3-3 7-3-7-7-3 7-3z" fill="#f4ce67" stroke="none"/><circle cx="29" cy="106" r="4" fill="#fff4bb" stroke="none"/><circle cx="174" cy="102" r="4" fill="#fff4bb" stroke="none"/></g>`
+type Props = {
+  id: string;
+  phase?: GrowthPhase;
+  className?: string;
+  eager?: boolean;
 };
 
-const winged = new Set(['phoenix','griffin','pegasus','archaeopteryx','dragon']);
-const horned = new Set(['unicorn','qilin','dragon','parasaurolophus']);
-const aquatic = new Set(['kappa','ammonite','trilobite','dunkleosteus','mosasaurus']);
-const furry = new Set(['cerberus','kitsune','baku','mammoth','smilodon']);
-
-function speciesDecoration(id:string,phase:GrowthPhase){
-  if(phase==='baby')return '';
-  if(winged.has(id))return phase==='child'
-    ?'<g fill="#fff8de" stroke="#8d735a" stroke-width="2"><path d="M52 118l-18 12 21 2M148 118l18 12-21 2"/></g>'
-    :'<g fill="#fff6d4" stroke="#8d735a" stroke-width="2.2"><path d="M52 109l-24 7 19 8-21 12 31-3M148 109l24 7-19 8 21 12-31-3"/></g>';
-  if(horned.has(id))return phase==='child'
-    ?'<path d="M96 39l5-13 5 13" fill="#f1d477" stroke="#80633f" stroke-width="2"/>'
-    :'<g fill="#f4d36d" stroke="#80633f" stroke-width="2"><path d="M87 42l2-20 10 17M113 42l-2-20-10 17"/><circle cx="100" cy="29" r="4" fill="#fff0a8" stroke="none"/></g>';
-  if(aquatic.has(id))return phase==='child'
-    ?'<g fill="#dff5ef" stroke="#6f9d98" stroke-width="2"><circle cx="38" cy="88" r="6"/><circle cx="158" cy="54" r="4"/></g>'
-    :'<g fill="#e7fbf6" stroke="#6f9d98" stroke-width="2"><circle cx="30" cy="82" r="8"/><circle cx="42" cy="57" r="4"/><circle cx="164" cy="63" r="7"/><circle cx="174" cy="88" r="4"/></g>';
-  if(furry.has(id))return phase==='child'
-    ?'<path d="M84 128l8 9 8-8 8 8 8-9-5 25H89z" fill="#fff0d7" stroke="#80644c" stroke-width="2"/>'
-    :'<path d="M77 122l10 13 8-11 8 11 10-13 8 33-21 13-21-13z" fill="#fff2db" stroke="#80644c" stroke-width="2.2"/>';
-  return phase==='adult'?'<circle cx="100" cy="28" r="6" fill="#fff0a8" stroke="#b28a3e" stroke-width="2"/>':'';
-}
-
-function renderArt(id:string,phase:GrowthPhase){
-  const base=arts[id]||'';
-  const additions=`${speciesDecoration(id,phase)}${stageDecorations[phase]}`;
-  return base
-    .replace('<svg ',`<svg data-growth="${phase}" `)
-    .replace('</svg>',`${additions}</svg>`);
-}
-
-export default function CreatureIllustration({id,phase='adult',className=''}:{id:string;phase?:GrowthPhase;className?:string}){
-  return <div className={`creatureIllustration growth-${phase} ${className}`} dangerouslySetInnerHTML={{__html:renderArt(id,phase)}}/>;
+export default function CreatureIllustration({
+  id,
+  phase = 'adult',
+  className = '',
+  eager = false,
+}: Props) {
+  return (
+    <div
+      className={`creatureIllustration growth-${phase} ${className}`}
+      data-creature={id}
+      data-growth={phase}
+    >
+      <img
+        src={`/art/creatures/${id}.webp`}
+        alt=""
+        width={640}
+        height={640}
+        loading={eager ? 'eager' : 'lazy'}
+        decoding="async"
+        draggable={false}
+      />
+    </div>
+  );
 }

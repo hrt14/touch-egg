@@ -1,0 +1,168 @@
+/* Hand-painted egg and creature assets. Kept separate from the compact base CSS. */
+.touchTarget {
+  width: 360px;
+  height: 330px;
+}
+
+.eggIllustration {
+  position: relative;
+  width: 286px;
+  height: 286px;
+  display: grid;
+  place-items: center;
+  transform-origin: 50% 82%;
+}
+
+.eggArt {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  overflow: visible;
+  filter: drop-shadow(0 17px 15px rgb(91 66 42 / 18%));
+  transition: transform 180ms ease, filter 180ms ease;
+}
+
+.eggCracks {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  filter: drop-shadow(0 1px 0 rgb(255 255 255 / 45%));
+}
+
+.eggCracks path {
+  fill: none;
+  stroke: #70472f;
+  stroke-width: 7;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.eggIllustration.stage1 .eggArt {
+  transform: rotate(-0.5deg) scale(1.005);
+}
+
+.eggIllustration.stage2 .eggArt {
+  transform: rotate(0.7deg) scale(1.01);
+}
+
+.eggIllustration.stage3,
+.eggIllustration.stage4 {
+  animation: painted-egg-wobble 420ms infinite alternate ease-in-out;
+}
+
+@keyframes painted-egg-wobble {
+  from {
+    transform: rotate(-1.5deg) translateY(1px);
+  }
+  to {
+    transform: rotate(1.5deg) translateY(-1px);
+  }
+}
+
+.creature {
+  width: 260px;
+  height: 260px;
+}
+
+.creatureGlow {
+  inset: 18px;
+  background: radial-gradient(circle, #fff8db 0, #f4e7bd9c 43%, transparent 73%);
+}
+
+.creatureIllustration {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  display: grid;
+  place-items: center;
+  isolation: isolate;
+}
+
+.creatureIllustration img {
+  width: 100%;
+  height: 100%;
+  display: block;
+  object-fit: cover;
+  user-select: none;
+  -webkit-user-drag: none;
+  mask-image: radial-gradient(circle, #000 58%, rgb(0 0 0 / 92%) 72%, transparent 96%);
+  -webkit-mask-image: radial-gradient(circle, #000 58%, rgb(0 0 0 / 92%) 72%, transparent 96%);
+  filter: drop-shadow(0 12px 12px rgb(75 55 34 / 13%));
+  transition: transform 320ms ease, filter 320ms ease;
+}
+
+.creatureIllustration.growth-baby img {
+  transform: scale(0.94);
+  filter: saturate(0.94) drop-shadow(0 8px 9px rgb(75 55 34 / 12%));
+}
+
+.creatureIllustration.growth-child img {
+  transform: scale(1.01);
+  filter: saturate(1.02) drop-shadow(0 11px 11px rgb(75 55 34 / 14%));
+}
+
+.creatureIllustration.growth-adult img {
+  transform: scale(1.07);
+  filter: saturate(1.07) contrast(1.015) drop-shadow(0 15px 14px rgb(75 55 34 / 16%));
+}
+
+.creatureIllustration::after {
+  position: absolute;
+  top: 13%;
+  right: 8%;
+  width: 12px;
+  height: 12px;
+  transform: rotate(45deg) scale(0.6);
+  border-radius: 3px;
+  background: #f6d873;
+  box-shadow: -136px 48px 0 -2px #fff0ae, -20px 150px 0 -3px #f4ba9b;
+  content: '';
+  opacity: 0;
+  transition: opacity 300ms ease, transform 300ms ease;
+}
+
+.creatureIllustration.growth-child::after {
+  transform: rotate(45deg) scale(0.78);
+  opacity: 0.65;
+}
+
+.creatureIllustration.growth-adult::after {
+  transform: rotate(45deg) scale(1);
+  opacity: 0.95;
+}
+
+.dexArt .creatureIllustration img {
+  transform: scale(1.04);
+}
+
+@media (max-width: 520px) {
+  .touchTarget {
+    height: 294px;
+  }
+
+  .eggIllustration,
+  .eggArt {
+    width: 244px;
+    height: 244px;
+  }
+
+  .creature {
+    width: 226px;
+    height: 226px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .eggIllustration.stage3,
+  .eggIllustration.stage4 {
+    animation: none;
+  }
+
+  .eggArt,
+  .creatureIllustration img,
+  .creatureIllustration::after {
+    transition: none;
+  }
+}

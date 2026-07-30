@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from 'next';
 import './globals.css';
 import './interaction-fixes.css';
+import './art.css';
 
 const SITE='https://touch-egg.hitobito.jp';
 
