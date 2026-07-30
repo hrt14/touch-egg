@@ -437,6 +437,21 @@ nav span {
 .rarity.legendary {
   background: #fff0bd;
 }
+.dexBadges {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+}
+.lineage {
+  display: inline-block;
+  border: 1px solid #d7b86f;
+  border-radius: 999px;
+  background: #fff8df;
+  color: #806127;
+  padding: 4px 8px;
+  font-size: 9px;
+  font-weight: 800;
+}
 .dexIntro {
   padding: 10px 2px 18px;
 }
@@ -458,14 +473,14 @@ nav span {
 }
 .grid article {
   min-width: 0;
-  min-height: 290px;
+  min-height: 370px;
   border-radius: 18px;
   padding: 14px;
   border: 1px solid #ddd2c1;
   background: #fffaf1;
   position: relative;
   content-visibility: auto;
-  contain-intrinsic-size: 290px;
+  contain-intrinsic-size: 370px;
   box-shadow: 0 8px 22px #7a66480d;
 }
 .grid article.locked {
