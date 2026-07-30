@@ -151,6 +151,10 @@
     width: 226px;
     height: 226px;
   }
+
+  .dexArt .creatureIllustration img {
+    transform: none;
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {
