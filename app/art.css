@@ -132,6 +132,15 @@
   opacity: 0.95;
 }
 
+.dexArt {
+  height: 215px;
+}
+
+.dexArt .creatureIllustration {
+  width: 205px;
+  height: 205px;
+}
+
 .dexArt .creatureIllustration img {
   transform: scale(1.04);
 }
@@ -150,6 +159,15 @@
   .creature {
     width: 226px;
     height: 226px;
+  }
+
+  .dexArt {
+    height: 250px;
+  }
+
+  .dexArt .creatureIllustration {
+    width: min(240px, 100%);
+    height: 240px;
   }
 
   .dexArt .creatureIllustration img {
