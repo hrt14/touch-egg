@@ -17,9 +17,10 @@
   width: 100%;
   height: 100%;
   object-fit: contain;
-  overflow: visible;
   filter: drop-shadow(0 17px 15px rgb(91 66 42 / 18%));
   transition: transform 180ms ease, filter 180ms ease;
+  user-select: none;
+  -webkit-user-drag: none;
 }
 
 .eggCracks {
@@ -84,27 +85,25 @@
   width: 100%;
   height: 100%;
   display: block;
-  object-fit: cover;
+  object-fit: contain;
   user-select: none;
   -webkit-user-drag: none;
-  mask-image: radial-gradient(circle, #000 58%, rgb(0 0 0 / 92%) 72%, transparent 96%);
-  -webkit-mask-image: radial-gradient(circle, #000 58%, rgb(0 0 0 / 92%) 72%, transparent 96%);
   filter: drop-shadow(0 12px 12px rgb(75 55 34 / 13%));
   transition: transform 320ms ease, filter 320ms ease;
 }
 
 .creatureIllustration.growth-baby img {
-  transform: scale(0.94);
+  transform: scale(0.98);
   filter: saturate(0.94) drop-shadow(0 8px 9px rgb(75 55 34 / 12%));
 }
 
 .creatureIllustration.growth-child img {
-  transform: scale(1.01);
+  transform: scale(1);
   filter: saturate(1.02) drop-shadow(0 11px 11px rgb(75 55 34 / 14%));
 }
 
 .creatureIllustration.growth-adult img {
-  transform: scale(1.07);
+  transform: scale(1.02);
   filter: saturate(1.07) contrast(1.015) drop-shadow(0 15px 14px rgb(75 55 34 / 16%));
 }
 
